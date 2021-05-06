@@ -1,4 +1,4 @@
-# DALLE-datasets
+## DALLE-datasets
 This is a summary of easily available, high-quality datasets consisiting of captioned image files for generalized DALLE-pytorch training.
 
 The scripts help you download and resize the files from the given sources.
@@ -9,3 +9,8 @@ The scripts help you download and resize the files from the given sources.
   * Filtered yfcc100m
 * specific datasets
   * None yet
+
+
+## Pretrained models
+
+If you want to continue training models or even upload your own Dall-E model, head over to https://github.com/robvanvolt/DALLE-models
