@@ -13,4 +13,4 @@ The scripts help you download and resize the files from the given sources.
 
 ## Pretrained models
 
-If you want to continue training models or even upload your own Dall-E model, head over to https://github.com/robvanvolt/DALLE-models
+If you want to continue training on pretrained models or even upload your own Dall-E model, head over to https://github.com/robvanvolt/DALLE-models
