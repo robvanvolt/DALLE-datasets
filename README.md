@@ -8,3 +8,4 @@ The scripts help you download and resize the files from the given sources.
   * Wikipedia
   * Filtered yfcc100m
 * specific datasets
+  * None yet
