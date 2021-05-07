@@ -8,6 +8,7 @@ from PIL import Image
 
 pandarallel.initialize()
 
+### download urls from here https://github.com/google-research-datasets/wit/blob/main/DATA.md
 FILENAME = 'wit_url_captions/wit_v1.train.all-00000-of-00010.tsv.gz'
 GROUP = FILENAME[38]
 CHUNKS = 500000
