@@ -6,7 +6,10 @@ import zipfile
 import os
 from pandarallel import pandarallel
 
-##### url-caption dataset from https://github.com/christophschuhmann/4MC-4M-Image-Text-Pairs-with-CLIP-embeddings
+##### https://ai.google.com/research/ConceptualCaptions/download
+##### download url-caption dataset from 
+##### https://storage.cloud.google.com/gcc-data/Train/GCC-training.tsv?_ga=2.191230122.-1896153081.1529438250
+
 DATASETFOLDER = '.'
 DATASETZIP = 'yfcc_filtered.zip'
 DATASET = 'Train_GCC-training.tsv'
