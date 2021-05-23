@@ -1,2 +1,4 @@
-./.*
+.vscode/
 datasets
+.DS_Store
+.gitignore
