@@ -18,8 +18,6 @@ SKIPFOLDER = 'skips'
 IMAGEFORMATS = ['jpg', 'jpeg', 'bmp', 'png']
 MAXWIDTH = 320
 MAXHEIGHT = 320
-REPORT = True
-REPORTEVERY = 2500
 
 LANGUAGEFILTER = True
 LANGUAGES = ['en']
@@ -103,11 +101,6 @@ def write_files(x, textfolderpath, imagefolderpath, i, itotal, totallength):
     else:
         with open(Path(textfolderpath + '/' + id + '.txt'), 'w') as f:
             f.write(x.caption)
-    if REPORT:
-        if x.name % REPORTEVERY == 0:
-            currentlength = return_total_downloaded_images()
-            print('Folder {}/{} - Image {:,}/{:,} ({:.2f} %).'.format(i + 1, itotal, currentlength, totallength, currentlength*100/totallength))
-
         
     
 print('Reading url-caption file...')
