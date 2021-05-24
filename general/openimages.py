@@ -1,3 +1,5 @@
+##### WORK IN PROGRESS #####
+
 import requests
 from pathlib import Path
 import tqdm
@@ -44,9 +46,22 @@ for url in urls:
         print(url + ' already downloaded. Skipping.')
 
 with open(Path(DATASETFOLDER + '/' + LABEL_URL.split('/')[-1]), encoding='utf-8') as narrative:
-    result = [json.loads(jline) for jline in narrative.read().splitlines()]
+    results = [json.loads(jline) for jline in narrative.read().splitlines()]
 
-print(result[:2])
+# print(result[:2])
+
+URL2ID = 'old_train-annotations-human-imagelabels-boxable.csv'
+
+urldf = pd.read_csv(DATASETFOLDER + '/' + URL2ID)
+
+input(urldf)
+
+for result in results:
+    input(result)
+
+for url in urls:
+    df = pd.read_csv(Path(DATASETFOLDER + '/' + url.split('/')[-1]))
+    input(df)
 # with open(Path(DATASETFOLDER + '/' + LABEL_URL.split('/')[-1]), encoding='utf-8') as narrative:
 #     data = json.load(narrative)
 # label_df = pd.read_json(data)
