@@ -1,0 +1,15 @@
+aria2c --bt-metadata-only=true --bt-save-metadata=true https://academictorrents.com/download/9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
+aria2c --show-files downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
+aria2c --select-file=9,11,15 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
+
+# next steps is to go to each folder and unzip the files
+echo "Gathering downsampled-open-images-v4"
+rm downsampled-open-images-v4*
+cd downsampled-open-images-v4/
+rm -rf 512px/
+cd 256px/
+for i in test-256.tar.gz test_challenge_2018-256.tar.gz train-256.tar.gz validation-256.tar.gz
+do 
+	echo "Untarring: $i";
+	tar -xf $i;
+done

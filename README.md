@@ -7,6 +7,7 @@ The scripts help you download and resize the files from the given sources.
   * Conceptual Images 12m
   * Wikipedia
   * Filtered yfcc100m
+  * Open Images
 * specific datasets
   * None yet
 

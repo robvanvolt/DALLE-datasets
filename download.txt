@@ -1,3 +1,0 @@
-aria2c --bt-metadata-only=true --bt-save-metadata=true https://academictorrents.com/download/9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
-aria2c --show-files downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
-aria2c --select-file=9,11,15 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent;
