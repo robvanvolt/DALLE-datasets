@@ -11,3 +11,4 @@ downsampled-open-images-v4.aria2
 testfolder
 testfolder_backup
 dataset_sanitycheck_backup.py
+incomplete_files.csv
