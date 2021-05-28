@@ -7,7 +7,7 @@ import collections
 
 parser = argparse.ArgumentParser(description='A script to sanitycheck your image-text pairs for DALLE-pytorch training.')
 parser.add_argument("-D", "--dataset_folder", help="Add the folder containing image-text pairs for DALLE-training.", required=True)
-parser.add_argument("-DEL", "--delete_incomplete_files", help="Decide if the incomplete/corrupt files shall be removed.", default=False)
+parser.add_argument("-DEL", "--delete_incomplete_files", action='store_true', help="Decide if the incomplete/corrupt files shall be removed.", required=False)
 parser.add_argument("-O", "--output_file", help="Incomplete files get saved in a textfile.", default='incomplete_files.csv')
 parser.add_argument("-M", "--min_characters", help="Text files with less than the specified character length get deleted.", default=5)
 args = parser.parse_args()
@@ -15,8 +15,10 @@ args = parser.parse_args()
 DATASETFOLDER = args.dataset_folder
 OUTPUTFILE = args.output_file
 MINCHARACTERS = args.min_characters
-DELETE = args.delete_incomplete_files
 FILEFORMATS = ['jpg', 'jpeg', 'png', 'bmp']
+DELETE = False
+if args.delete_incomplete_files is not None:
+    DELETE = True
 
 filenames_and_folders = os.listdir(DATASETFOLDER)
 folders = [x for x in filenames_and_folders if os.path.isdir(Path(DATASETFOLDER + '/' + x)) == True]
@@ -100,6 +102,7 @@ for folder in folders:
 df = pd.DataFrame.from_dict(faulty_data).T
 df.index.name = 'folderpath'
 df.to_csv(OUTPUTFILE, sep='|')
+print('Table of incomplete files was saved to {}'.format(OUTPUTFILE))
 
 if DELETE:
     print('Deleting incomplete and corrupt files...')
@@ -110,4 +113,5 @@ if DELETE:
         for delete_file in delete_list:
             if os.path.isfile(Path(delete_file)):
                 os.remove(Path(delete_file))
-    print('Finished deleting {:,}'.format(count_deleted_files))
+    
+    print('Finished deleting {:,} files.'.format(count_deleted_files))
