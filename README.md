@@ -27,3 +27,4 @@ If you want to continue training on pretrained models or even upload your own Da
 ## Credits
 
 A lot of inspiration was taken from https://github.com/yashbonde/dall-e-baby - unfortunately that repo does not get updated anymore...
+Also, the shard creator was inspired by https://github.com/tmbdev-archive/webdataset-examples/blob/master/makeshards.py.
