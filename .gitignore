@@ -1,5 +1,6 @@
 .vscode/
 datasets
+shards
 openimages
 openimages_old.py
 .DS_Store
@@ -8,7 +9,9 @@ captions_train.json
 downsampled-open-images-v4
 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent
 downsampled-open-images-v4.aria2
+wds_create_shards_backup.py
 testfolder
 testfolder_backup
+dataset.tar.gz
 dataset_sanitycheck_backup.py
 incomplete_files.csv

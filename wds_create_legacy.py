@@ -10,6 +10,10 @@ OUTPUTFILENAME = 'dataset'
 alldirs = os.walk(Path(DATASETPATH))
 all_basepaths = []
 
+############################################################################
+########### Legacy wds_creator - better use wds_create_shards.py ###########
+############################################################################
+
 ### (1) Find image-text pairs in all (sub)folders of the basepath
 
 for dir in alldirs:
@@ -38,6 +42,8 @@ for basepath in all_basepaths:
 ### (3) Create compressed Webdataset tar file
 
 sink = wds.TarWriter(OUTPUTFILENAME + '.tar.gz', encoder=False)
+
+sink.write
 
 for basepath in curated_basepaths:
     with open(Path(basepath + '.jpg'), "rb") as imgstream:
