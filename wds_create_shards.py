@@ -11,7 +11,7 @@ import webdataset as wds
 
 parser = argparse.ArgumentParser("""Generate sharded dataset from image-text-datasets.""")
 parser.add_argument("--maxsize", type=float, default=1e9)
-parser.add_argument("--maxcount", type=float, default=2)
+parser.add_argument("--maxcount", type=float, default=100000)
 parser.add_argument(
     "--compression", 
     dest="compression", 
