@@ -4,18 +4,17 @@ from pathlib import Path
 from pandarallel import pandarallel
 import os
 import requests
+from io import BytesIO
 from PIL import Image
+from cairosvg import svg2png
 
 pandarallel.initialize()
 
 ### download urls from here https://github.com/google-research-datasets/wit/blob/main/DATA.md
-FILENAME = 'wit_url_captions/wit_v1.train.all-00000-of-00010.tsv.gz'
-GROUP = FILENAME[38]
-CHUNKS = 500000
-TEXTFOLDER = 'texts'
-IMAGEFOLDER = 'images'
-SKIPFOLDER = 'skips'
-IMAGEFORMATS = ['jpg', 'jpeg', 'bmp', 'png']
+# FILENAME = 'wit_url_captions/wit_v1.train.all-00000-of-00010.tsv.gz'
+FILENAME = 'wit_v1.train.all-1percent_sample.tsv.gz'
+CHUNKS = 50000
+DATAFOLDER = 'wit'
 MAXWIDTH = 320
 MAXHEIGHT = 320
 
@@ -28,78 +27,53 @@ LANGUAGES = ['en']
 # FILENAME = 'wit1percent.tsv.gz'
 # FILENAMES = os.listdir(Path(MAINFOLDERNAME))
 
-os.makedirs(TEXTFOLDER, exist_ok=True)
-os.makedirs(IMAGEFOLDER, exist_ok=True)
-os.makedirs(SKIPFOLDER, exist_ok=True)
+os.makedirs(DATAFOLDER, exist_ok=True)
 
-imagefolders = os.listdir(Path(IMAGEFOLDER))
-textfolders = os.listdir(Path(TEXTFOLDER))
-skipfiles = os.listdir(Path(SKIPFOLDER))
+path = Path(DATAFOLDER)
+text_files = [*path.glob('**/*.txt')]
+text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
+text_total = len(text_files)
 
-####### Progress calculation based on image files
-def return_total_downloaded_images():
-    images = []
-    for subimagefolder in os.listdir(Path(IMAGEFOLDER)):
-        images += os.listdir(Path(IMAGEFOLDER + '/' + subimagefolder))
-    return len(images)
+image_files = [
+    *path.glob('**/*.png'), *path.glob('**/*.jpg'),
+    *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
+]
+image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
+image_total = len(image_files)
 
-# def return_total_downloaded_texts():
-#     texts = []
-#     for subtextfolder in os.listdir(Path(TEXTFOLDER)):
-#         texts += os.listdir(Path(TEXTFOLDER + '/' + subtextfolder))
-#     return len(texts)
+print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
 
-imagefiles = []
-textfiles = []
-skipfilenumbers = []
-
-####### Extracting content of subfolders
-for subtextfolder in textfolders:
-    textfiles += os.listdir(Path(TEXTFOLDER + '/' + subtextfolder))
-
-for subimagefolder in imagefolders:
-    imagefiles += os.listdir(Path(IMAGEFOLDER + '/' + subimagefolder))
-
-######## Calculating downloaded files
-if len(imagefiles) > 0:
-    imagefilenumbers = [int(x[1:-4]) for x in imagefiles]
-else:
-    imagefilenumbers = []
-
-if len(textfiles) > 0:
-    textfilenumbers = [int(x[1:-4]) for x in textfiles]
-else:
-    textfilenumbers = []
-
-missing_images = [x for x in textfilenumbers if x not in imagefilenumbers]
-missing_texts = [x for x in imagefilenumbers if x not in textfilenumbers]
-
-print('Missing {:,} images and {:,} texts.'.format(len(missing_images), len(missing_texts)))
-
-####### Note skip folder does not have subfolders, size does not matter
-####### because it is not needed for training
-# if len(skipfiles) > 0:
-#     skipfilenumbers = [int(x[1:]) for x in skipfiles]
-
-print('Already downloaded {:,} images and {:,} texts.'.format(len(imagefilenumbers), len(textfilenumbers)))
+keys = (image_files.keys() & text_files.keys())
 
 def load_missing_captions(x, textfolderpath, imagefolderpath, i, itotal, totallength):
     id = "w" + "0"*(9-len(str(x.name))) + str(x.name)
     with open(Path(textfolderpath + '/' + id + '.txt'), 'w') as f:
         f.write(x.caption)
 
-def write_files(x, textfolderpath, imagefolderpath, i, itotal, totallength):
-    id = "w" + "0"*(9-len(str(x.name))) + str(x.name)
+def write_files(x, datafolderpath, i, itotal, totallength):
+    id = "%09d" % x.name
     try:
-        foo = Image.open(requests.get(x.image_url, stream=True, timeout=4).raw)
-        a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
-        foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS)
-        foo.save(Path(imagefolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
-    except Exception:
-        # open(Path(SKIPFOLDER + '/' + id), 'a').close
+        if '.svg' in x.image_url.lower():
+            output = svg2png(url=x.image_url)
+            foo_t = Image.open(BytesIO(output)).convert("RGBA")
+            foo = Image.new("RGBA", foo_t.size, "WHITE")
+            foo.paste(foo_t, (0, 0), foo_t)
+            a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
+            foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS).convert('RGB')
+            foo.save(Path(datafolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
+        else:
+            with Image.open(requests.get(x.image_url, stream=True, timeout=4).raw) as foo:
+                if not foo.mode == 'RGB':
+                    foo.convert('RGB')
+                a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
+                foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS).convert('RGB')
+                foo.save(Path(datafolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
+    except Exception as e:
+        print(e)
+        print(x.image_url)
         pass
     else:
-        with open(Path(textfolderpath + '/' + id + '.txt'), 'w') as f:
+        with open(Path(datafolderpath + "/" + id + '.txt'), 'w') as f:
             f.write(x.caption)
         
     
@@ -155,52 +129,33 @@ splits = np.array_split(df, parts)
 
 # print(totallength)
 # print(len(splits))
+
 itotal = len(splits)
 print('The whole dataframe was divided into {} part(s).'.format(itotal))
 
 for i, splitdf in enumerate(splits):
-    foldername = "w" + str(GROUP) + '_' + "0"*(3-len(str(i))) + str(i)
-    textfolderpath = TEXTFOLDER + '/' + foldername
-    imagefolderpath = IMAGEFOLDER + '/' + foldername
-    os.makedirs(Path(textfolderpath), exist_ok=True)
-    os.makedirs(Path(imagefolderpath), exist_ok=True)
-    textfolderfiles = os.listdir(textfolderpath)
-    folderfiles = len(os.listdir(imagefolderpath))
-    if len(missing_texts) > 0:
-        print('Trying do generate missing text files...')
-        missingdf = df[df.index.isin(missing_texts)]
-        missingdf.parallel_apply(lambda x: load_missing_captions(x, textfolderpath, imagefolderpath, i, itotal, totallength), axis=1)
-        textfiles = []
-        for subtextfolder in textfolders:
-            textfiles += os.listdir(Path(TEXTFOLDER + '/' + subtextfolder))
-        textfilestotal = len(textfiles)
-        print('Successfully generated {:,} missing text file(s).'.format(len(missingdf)))
-    print('Downloading texts into {} and images into {}.'.format(textfolderpath, imagefolderpath))
-    filteredsplitdf = splitdf[~splitdf.index.isin(textfilenumbers)]
+    foldername = "%05d" % i
+    datafolderpath = DATAFOLDER + '/' + foldername
+    os.makedirs(Path(datafolderpath), exist_ok=True)
+    print('Downloading texts and images into {}.'.format(datafolderpath))
+    filteredsplitdf = splitdf[~splitdf.index.isin(keys)]
     # filteredsplitdf = filteredsplitdf[~filteredsplitdf.index.isin(skipfilenumbers)]
     dflength = len(filteredsplitdf)
-    downloadedimages = return_total_downloaded_images()
     print('Total length: {:,}'.format(totallength))
-    print('Downloaded images: {:,}'.format(downloadedimages))
-    print('Remaining images: {:,}\n'.format(totallength - downloadedimages))
-    print(dflength)
-    if dflength > 0:
-        while return_total_downloaded_images() < totallength:
-            print('##############')
-            print('Remaining {:,} images to get downloaded.'.format(totallength - return_total_downloaded_images()))
-            print('##############')
-            filteredsplitdf.parallel_apply(lambda x: write_files(x, textfolderpath, imagefolderpath, i, itotal, totallength), axis=1)
+    print('Downloading split length: {:,}'.format(dflength))
+    filteredsplitdf.parallel_apply(lambda x: write_files(x, datafolderpath, i, itotal, totallength), axis=1)
 
-textfolders = os.listdir(Path(TEXTFOLDER))
-textfiles = []
-for subtextfolder in textfolders:
-    textfiles += os.listdir(Path(TEXTFOLDER + '/' + subtextfolder))
-textfilestotal = len(textfiles)
+text_files = [*path.glob('**/*.txt')]
+text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
+text_total = len(text_files)
 
-imagefolders = os.listdir(Path(IMAGEFOLDER))
-imagefiles = []
-for subimagefolder in imagefolders:
-    imagefiles += os.listdir(Path(IMAGEFOLDER + '/' + subimagefolder))
-imagefilestotal = len(imagefiles)
+image_files = [
+    *path.glob('**/*.png'), *path.glob('**/*.jpg'),
+    *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
+]
+image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
+image_total = len(image_files)
 
-print('Finished downloading {:,} images and {:,} texts.'.format(imagefilestotal, textfilestotal))
+print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
+
+print('Finished downloading {:,} images and {:,} texts.'.format(image_total, text_total))
