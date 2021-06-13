@@ -42,7 +42,6 @@ print('Found {} files containing Image-URLs.'.format(len(URLS)))
 
 for i, FILENAME in enumerate(URLS):
     DATAFOLDER = DATAPARENTFOLDER + '/' + FILENAME
-    # DATAFOLDER = DATAPARENTFOLDER + '/' + FILENAME
     print('{} - Starting downloading image-text-pairs from {} to {}'.format(i + 1, FILENAME, DATAFOLDER))
     os.makedirs(DATAFOLDER, exist_ok=True)
 
@@ -61,11 +60,6 @@ for i, FILENAME in enumerate(URLS):
     print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
 
     keys = (image_files.keys() & text_files.keys())
-
-    def load_missing_captions(x, textfolderpath, imagefolderpath, i, itotal, totallength):
-        id = "w" + "0"*(9-len(str(x.name))) + str(x.name)
-        with open(Path(textfolderpath + '/' + id + '.txt'), 'w') as f:
-            f.write(x.caption)
 
     def write_files(x, datafolderpath, i, itotal, totallength):
         id = "%09d" % x.name
