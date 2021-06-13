@@ -1,5 +1,7 @@
 .vscode/
 datasets
+tfrecords
+skips
 shards
 openimages
 openimages_old.py
@@ -9,7 +11,7 @@ captions_train.json
 downsampled-open-images-v4
 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent
 downsampled-open-images-v4.aria2
-wit_v1.train.all-1percent_sample.tsv.gz
+wit_urls
 wds_create_shards_backup.py
 testfolder
 testfolder_backup
