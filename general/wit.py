@@ -37,64 +37,41 @@ def eng_cap(x):
     else:
         return x
 
-
-print('Found {} files containing Image-URLs.'.format(len(URLS)))
-
-for i, FILENAME in enumerate(URLS):
-    DATAFOLDER = DATAPARENTFOLDER + '/' + FILENAME
-    print('{} - Starting downloading image-text-pairs from {} to {}'.format(i + 1, FILENAME, DATAFOLDER))
-    os.makedirs(DATAFOLDER, exist_ok=True)
-
-    path = Path(DATAFOLDER)
-    text_files = [*path.glob('**/*.txt')]
-    text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
-    text_total = len(text_files)
-
-    image_files = [
-        *path.glob('**/*.png'), *path.glob('**/*.jpg'),
-        *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
-    ]
-    image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
-    image_total = len(image_files)
-
-    print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
-
-    keys = (image_files.keys() & text_files.keys())
-
-    def write_files(x, datafolderpath, i, itotal, totallength):
-        id = "%09d" % x.name
-        try:
-            if '.svg' in x.image_url.lower():
-                output = svg2png(url=x.image_url)
-                foo_t = Image.open(BytesIO(output)).convert("RGBA")
-                foo = Image.new("RGBA", foo_t.size, "WHITE")
-                foo.paste(foo_t, (0, 0), foo_t)
+def write_files(x, datafolderpath):
+    id = "%09d" % x.name
+    try:
+        if '.svg' in x.image_url.lower():
+            output = svg2png(url=x.image_url)
+            foo_t = Image.open(BytesIO(output)).convert("RGBA")
+            foo = Image.new("RGBA", foo_t.size, "WHITE")
+            foo.paste(foo_t, (0, 0), foo_t)
+            a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
+            foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS).convert('RGB')
+            foo.save(Path(datafolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
+        else:
+            with Image.open(requests.get(x.image_url, stream=True, timeout=4).raw) as foo:
+                if foo.mode == "RGBA":
+                    foo = Image.new("RGBA", foo.size, "WHITE")
+                    foo.paste(foo, (0, 0), foo)
                 a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
                 foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS).convert('RGB')
                 foo.save(Path(datafolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
-            else:
-                with Image.open(requests.get(x.image_url, stream=True, timeout=4).raw) as foo:
-                    if foo.mode == "RGBA":
-                        foo = Image.new("RGBA", foo.size, "WHITE")
-                        foo.paste(foo, (0, 0), foo)
-                    a = max(MAXWIDTH/foo.size[0], MAXHEIGHT/foo.size[1])
-                    foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS).convert('RGB')
-                    foo.save(Path(datafolderpath + "/" + id + '.jpg'), optimize=True, quality=85)
-        except Exception as e:
-            print(e)
-            print(x.image_url)
-            pass
-        else:
-            with open(Path(datafolderpath + "/" + id + '.txt'), 'w') as f:
-                f.write(x.caption)
-            
-        
-    print('Reading url-caption file...')
+    except Exception as e:
+        print(e)
+        print(x.image_url)
+        pass
+    else:
+        with open(Path(datafolderpath + "/" + id + '.txt'), 'w') as f:
+            f.write(x.caption)
+
+def get_df(batch):
     df = pd.read_csv(
         Path(URL_FOLDER + '/' + FILENAME), 
         compression='gzip', 
         header=0, 
         sep='\t',
+        skiprows=range(1, batch * CHUNKS), 
+        nrows=CHUNKS,
         quotechar='"', 
         dtype={
             'language': str,
@@ -117,6 +94,8 @@ for i, FILENAME in enumerate(URLS):
         },
         # sep='\t', 
         error_bad_lines=False)
+    
+    df.index = [x + batch * CHUNKS for x in list(df.index)]
 
     if LANGUAGEFILTER:
         df = df[df['language'].isin(LANGUAGES)]
@@ -133,42 +112,73 @@ for i, FILENAME in enumerate(URLS):
     df['caption'] = df['caption'].str.strip()
     df['caption'] = df['caption'].parallel_apply(lambda x: eng_cap(x))
     df['index'] = df.index
+    return df
 
-    totallength = len(df)
+print('Found {} files containing Image-URLs.'.format(len(URLS)))
 
-    parts = totallength / CHUNKS
+for i, FILENAME in enumerate(URLS):
+    DATAFOLDER = DATAPARENTFOLDER + '/' + FILENAME
+    os.makedirs(DATAFOLDER, exist_ok=True)
 
-    splits = np.array_split(df, parts)
+    print('{} - Starting downloading image-text-pairs from {} to {}'.format(i + 1, FILENAME, DATAFOLDER))
+      
+    batch = 0
+    remaining_df_length = 1
+    df = get_df(batch)
 
-    # print(totallength)
-    # print(len(splits))
+    while remaining_df_length > 0:
+        print('Reading url-caption file...')
 
-    itotal = len(splits)
-    print('The whole dataframe was divided into {} part(s).'.format(itotal))
+        totallength = len(df)
+        foldername = "%05d" % batch
 
-    for i, splitdf in enumerate(splits):
-        foldername = "%05d" % i
-        datafolderpath = DATAFOLDER + '/' + foldername
-        os.makedirs(Path(datafolderpath), exist_ok=True)
-        print('Downloading texts and images into {}.'.format(datafolderpath))
-        filteredsplitdf = splitdf[~splitdf.index.isin(keys)]
+        pathstring = DATAFOLDER + '/' + foldername
+        path = Path(DATAFOLDER + '/' + foldername)
+        text_files = [*path.glob('**/*.txt')]
+        text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
+        text_total = len(text_files)
+
+        image_files = [
+            *path.glob('**/*.png'), *path.glob('**/*.jpg'),
+            *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
+        ]
+        image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
+        image_total = len(image_files)
+
+        print('Found {:,} textfiles and {:,} images already downloaded for batch {}.'.format(text_total, image_total, batch))
+
+        keys = (image_files.keys() & text_files.keys())
+
+
+        os.makedirs(path, exist_ok=True)
+        print('Downloading texts and images into {}.'.format(pathstring))
+        filteredsplitdf = df[~df.index.isin(keys)]
         # filteredsplitdf = filteredsplitdf[~filteredsplitdf.index.isin(skipfilenumbers)]
         dflength = len(filteredsplitdf)
-        print('Total length: {:,}'.format(totallength))
-        print('Downloading split length: {:,}'.format(dflength))
-        filteredsplitdf.parallel_apply(lambda x: write_files(x, datafolderpath, i, itotal, totallength), axis=1)
 
-    text_files = [*path.glob('**/*.txt')]
-    text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
-    text_total = len(text_files)
+        print('Total length batch {}: {:,}'.format(batch, totallength))
+        print('Remaining batch length: {:,}'.format(dflength))
 
-    image_files = [
-        *path.glob('**/*.png'), *path.glob('**/*.jpg'),
-        *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
-    ]
-    image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
-    image_total = len(image_files)
+        if dflength > 0:
+            filteredsplitdf.parallel_apply(lambda x: write_files(x, pathstring), axis=1)
 
-    print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
+        batch += 1
+        df = get_df(batch)
+        remaining_df_length = len(df)
 
-    print('Finished downloading {:,} images and {:,} texts.'.format(image_total, text_total))
+print('Finished downloading WIT.')
+
+# text_files = [*path.glob('**/*.txt')]
+# text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
+# text_total = len(text_files)
+
+# image_files = [
+#     *path.glob('**/*.png'), *path.glob('**/*.jpg'),
+#     *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
+# ]
+# image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
+# image_total = len(image_files)
+
+# print('Found {:,} textfiles and {:,} images already downloaded.'.format(text_total, image_total))
+
+# print('Finished downloading {:,} images and {:,} texts.'.format(image_total, text_total))
