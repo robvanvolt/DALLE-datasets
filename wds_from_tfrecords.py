@@ -41,7 +41,7 @@ parser.add_argument(
 parser.add_argument(
     "--data",
     default="./tfr",
-    help="directory path containing data suitable for DALLE-pytorch training",
+    help="directory path containing tfrecord files",
 )
 args = parser.parse_args()
 
