@@ -2,7 +2,7 @@ import webdataset as wds
 import torch
 
 # dataset = wds.WebDataset('dataset.tar.gz').shuffle(8).decode().to_tuple("cap", "img")
-dataset = wds.WebDataset('dataset.tar.gz').shuffle(8).decode()
+dataset = wds.WebDataset('shards/ds_000000.tar').shuffle(8).decode()
 
 # for d in dataset:
 #     input(d)

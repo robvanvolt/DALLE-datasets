@@ -1,6 +1,7 @@
 .vscode/
 datasets
 tfrecords
+tfr
 skips
 shards
 openimages
