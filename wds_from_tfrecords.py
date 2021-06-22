@@ -118,8 +118,6 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
         for key in keys:
           sample[key] = item[key]
         sink.write(sample)
-        print(sample)
-        input()
         if count % args.report_every == 0:
           print('   {:,}'.format(count), end='\r')
 
