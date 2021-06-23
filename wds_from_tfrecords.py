@@ -15,9 +15,15 @@ parser.add_argument(
     help="Creates compressed .tar.gz files instead of uncompressed .tar files."
     )
 parser.add_argument(
+    "--use_encoder", 
+    dest="use_encoder", 
+    action="store_true",
+    help="Uses encoder on unknown filetimes (the suffix in the keep_keys argument)."
+    )
+parser.add_argument(
     "--keep_keys", 
     type=str, 
-    default="image.jpg;png,label.txt",
+    default="image.pyd,label.cls",
     help="Only keep the columns from the comma separated keys from that argument. The dot separated suffix is the filetype."
     )
 parser.add_argument(
@@ -66,7 +72,7 @@ total_files = len(tfrecord_files)
 #     'width': tf.io.FixedLenFeature([], tf.int64),
 # }
 FEATURE_DESCRIPTION = {
-  ###### Please provide your feature description
+  ###### Please provide your tfrecord feature description
 }
 
 assert len(FEATURE_DESCRIPTION) > 0, 'Please provide the feature description to your tfrecord dataset.'
@@ -88,7 +94,7 @@ pattern = os.path.join(args.shards, args.shard_prefix + f"%06d.tar" + (".gz" if 
 count = 0
 
 start = timeit.default_timer()
-with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount)) as sink:
+with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount), encoder=args.use_encoder) as sink:
   for tfrecord_file in tfrecord_files:
     raw_dataset = tf.data.TFRecordDataset(tfrecord_file)
     dataset = raw_dataset.map(_parse_example)
@@ -98,7 +104,7 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
             "__key__": ds_key,
         }
         for key in KEEP_KEYS:
-            sample[key] = item[key]
+            sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
         sink.write(sample)
         if count % args.report_every == 0:
           print('   {:.2f}'.format(count), end='\r')
