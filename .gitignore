@@ -2,12 +2,17 @@
 datasets
 tfrecords
 tfr
+tartest.py
 skips
 shards
 openimages
 openimages_old.py
 .DS_Store
 .gitignore
+build
+dist
+.ipynb_checkpoints
+dalle_datasets.egg-info
 captions_train.json
 downsampled-open-images-v4
 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent

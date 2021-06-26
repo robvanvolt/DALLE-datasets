@@ -63,6 +63,9 @@ tfrecord_files = [args.data + '/' + x for x in os.listdir(args.data) if x.split(
 total_files = len(tfrecord_files)
 
 ###### Example of a feature description to a tfrecord dataset
+FEATURE_DESCRIPTION = {
+  ###### Please provide your tfrecord feature description
+}
 # FEATURE_DESCRIPTION = {
 #     'sampleID': tf.io.FixedLenFeature([], tf.string),
 #     'image': tf.io.FixedLenFeature([], tf.string),
@@ -71,9 +74,6 @@ total_files = len(tfrecord_files)
 #     'height': tf.io.FixedLenFeature([], tf.int64),
 #     'width': tf.io.FixedLenFeature([], tf.int64),
 # }
-FEATURE_DESCRIPTION = {
-  ###### Please provide your tfrecord feature description
-}
 
 assert len(FEATURE_DESCRIPTION) > 0, 'Please provide the feature description to your tfrecord dataset.'
 
