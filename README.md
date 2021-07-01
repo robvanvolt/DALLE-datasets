@@ -12,7 +12,16 @@ The scripts help you download and resize the files from the given sources.
   * None yet
 
 
-## Sanitycheck for downloaded datasets
+## Helper scripts
+
+All helper scripts can be found in the utilities folder now:
+* TFrecords to WebDataset converter
+* Image-Text-Folder to WebDataset converter
+* Dataset sanitycheck for image-text-files
+* Example reader for WebDataset files
+
+
+### Sanitycheck for downloaded datasets
 
 The following command will look for image-text-pairs (.jpg / .png / .bmp) and return a csv table with incomplete data.
 When you add the optional argument -DEL, the incomplete files get deleted. The python scripts checks one folder and the first subdirectories.
