@@ -14,6 +14,7 @@ dist
 .ipynb_checkpoints
 dalle_datasets.egg-info
 captions_train.json
+openimages-train-000000.tar
 downsampled-open-images-v4
 downsampled-open-images-v4-9208d33aceb2ca3eb2beb70a192600c9c41efba1.torrent
 downsampled-open-images-v4.aria2
