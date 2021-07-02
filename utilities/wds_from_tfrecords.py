@@ -5,6 +5,8 @@ import argparse
 import os
 import timeit
 import hashlib
+from io import BytesIO
+from PIL import Image
 
 parser = argparse.ArgumentParser("""Generate sharded dataset from tfrecord-files.""")
 parser.add_argument("--maxsize", type=float, default=1e9)
@@ -30,8 +32,14 @@ parser.add_argument(
 parser.add_argument(
     "--remove_duplicates",
     dest="remove_duplicates",
-    default="",
+    default="image",
     help="Remove duplicates from given column name. (e.g. --remove_duplicates image)"
+    )
+parser.add_argument(
+    "--min_max_size",
+    dest="min_max_size",
+    default="192,320",
+    help="Discards smaller and resizes larger images. (e.g. --min_max_size 256,320)"
     )
 parser.add_argument(
     "--report_every", 
@@ -46,7 +54,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--shard_prefix", 
-    default="ds_", 
+    default="wds_", 
     help="prefix of shards' filenames created in the shards-folder"
 )
 parser.add_argument(
@@ -59,6 +67,13 @@ args = parser.parse_args()
 KEEP_KEYS = []
 if args.keep_keys != '':
   KEEP_KEYS = {x.split('.')[0]: x.split('.')[1] for x in args.keep_keys.split(',')}
+
+SIZE = {}
+if args.min_max_size != '':
+  SIZE = {
+    'min': int(args.min_max_size.split(',')[0]),
+    'max': int(args.min_max_size.split(',')[1])
+  }
 
 assert args.maxsize > 10000000
 assert args.maxcount < 1000000
@@ -73,14 +88,14 @@ total_files = len(tfrecord_files)
 FEATURE_DESCRIPTION = {
   ###### Please provide your tfrecord feature description
 }
-# FEATURE_DESCRIPTION = {
-#     'sampleID': tf.io.FixedLenFeature([], tf.string),
-#     'image': tf.io.FixedLenFeature([], tf.string),
-#     'format': tf.io.FixedLenFeature([], tf.string),
-#     'label': tf.io.FixedLenFeature([], tf.string),
-#     'height': tf.io.FixedLenFeature([], tf.int64),
-#     'width': tf.io.FixedLenFeature([], tf.int64),
-# }
+FEATURE_DESCRIPTION = {
+    'sampleID': tf.io.FixedLenFeature([], tf.string),
+    'image': tf.io.FixedLenFeature([], tf.string),
+    'format': tf.io.FixedLenFeature([], tf.string),
+    'label': tf.io.FixedLenFeature([], tf.string),
+    'height': tf.io.FixedLenFeature([], tf.int64),
+    'width': tf.io.FixedLenFeature([], tf.int64),
+}
 
 assert len(FEATURE_DESCRIPTION) > 0, 'Please provide the feature description to your tfrecord dataset.'
 
@@ -100,9 +115,15 @@ def _parse_example(example_proto):
 pattern = os.path.join(args.shards, args.shard_prefix + f"%06d.tar" + (".gz" if args.compression else ''))
 count = 0
 
+# Arguments for removing duplicates
 duplicate_count = 0
 duplicate_md5 = set()
-skip = False
+skip_duplicate = False
+
+# Arguments for resizing / discarding images
+discard_count = 0
+resize_count = 0
+skip_sizemismatch = False
 
 start = timeit.default_timer()
 with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount), encoder=args.use_encoder) as sink:
@@ -118,24 +139,53 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
           valuehash = hashlib.md5(item[args.remove_duplicates]).hexdigest()
           if valuehash in duplicate_md5:
             duplicate_count += 1
-            skip = True
+            skip_duplicate = True
           else:
             duplicate_md5.add(valuehash)
-        if not skip:
-          for key in KEEP_KEYS:
-              sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
-          sink.write(sample)
+
+        if skip_duplicate == False:
+
+          ### Resize, discard or keep block
+          if args.min_max_size != '':
+            if item['width'] < SIZE['min'] and item['height'] < SIZE['min']:
+              discard_count += 1
+              skip_sizemismatch = True
+            elif item['width'] > SIZE['max'] or item['height'] > SIZE['max']:
+              resize_count += 1
+              # Resize image
+              foo = Image.open(BytesIO(item['image'])).convert('RGB')
+              a = max(SIZE['max']/foo.size[0], SIZE['max']/foo.size[1])
+              foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS)
+              # Image to bytes
+              img_byte_arr = BytesIO()
+              foo.save(img_byte_arr, format='jpeg', optimize=True, quality=85)
+              item['image'] = img_byte_arr.getvalue()
+
+          if skip_sizemismatch == False:
+            #### Writing row to WebDataset file
+            for key in KEEP_KEYS:
+                sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
+            sink.write(sample)
+            #### End writing row to WebDataset file
+          else:
+            skip_sizemismatch = False
+
         else:
-          skip = False
+          skip_duplicate = False
+
         if count % args.report_every == 0:
           print('   {:.2f}'.format(count), end='\r')
         count += 1
+        
 stop = timeit.default_timer()
 
-print('###################################################################')  
-print('Finished processing {:,} samples from tfrecord files.'.format(count))
-print('Process took {:.2f} seconds to finish.'.format(stop - start))
+print('######################################################################')  
+print('# Finished processing {:,} samples from tfrecord files.'.format(count))
+print('# Process took {:.2f} seconds to finish.'.format(stop - start))
 if (args.remove_duplicates != ''):
-  print('Skipped {} duplicates from a total of {} items.'.format(duplicate_count, count))
-print('The WebDataset files can be found in {}.'.format(args.shards))
-print('###################################################################')
+  print('# Skipped {:,} duplicates from a total of {:,} items.'.format(duplicate_count, count))
+if (args.min_max_size != ''):
+  print('# Discarded {:,} and resized {:,} images from remaining {:,} items.'.format(discard_count, resize_count, count - duplicate_count))
+  print('# {:,} images remain in the Dataset.'.format(count - (duplicate_count + discard_count)))
+print('# The WebDataset files can be found in {}.'.format(args.shards))
+print('######################################################################')
