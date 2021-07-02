@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import os
 import timeit
+import hashlib
 
 parser = argparse.ArgumentParser("""Generate sharded dataset from tfrecord-files.""")
 parser.add_argument("--maxsize", type=float, default=1e9)
@@ -25,6 +26,12 @@ parser.add_argument(
     type=str, 
     default="image.pyd,label.cls",
     help="Only keep the columns from the comma separated keys from that argument. The dot separated suffix is the filetype."
+    )
+parser.add_argument(
+    "--remove_duplicates",
+    dest="remove_duplicates",
+    default="",
+    help="Remove duplicates from given column name. (e.g. --remove_duplicates image)"
     )
 parser.add_argument(
     "--report_every", 
@@ -93,6 +100,10 @@ def _parse_example(example_proto):
 pattern = os.path.join(args.shards, args.shard_prefix + f"%06d.tar" + (".gz" if args.compression else ''))
 count = 0
 
+duplicate_count = 0
+duplicate_md5 = set()
+skip = False
+
 start = timeit.default_timer()
 with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount), encoder=args.use_encoder) as sink:
   for tfrecord_file in tfrecord_files:
@@ -103,15 +114,28 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
         sample = {
             "__key__": ds_key,
         }
-        for key in KEEP_KEYS:
-            sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
-        sink.write(sample)
+        if args.remove_duplicates != '':
+          valuehash = hashlib.md5(item[args.remove_duplicates]).hexdigest()
+          if valuehash in duplicate_md5:
+            duplicate_count += 1
+            skip = True
+          else:
+            duplicate_md5.add(valuehash)
+        if not skip:
+          for key in KEEP_KEYS:
+              sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
+          sink.write(sample)
+        else:
+          skip = False
         if count % args.report_every == 0:
           print('   {:.2f}'.format(count), end='\r')
         count += 1
 stop = timeit.default_timer()
 
-print('###################################################################')
-print('Finished converting {:,} samples from tfrecord files to webdataset.'.format(count))
+print('###################################################################')  
+print('Finished processing {:,} samples from tfrecord files.'.format(count))
 print('Process took {:.2f} seconds to finish.'.format(stop - start))
+if (args.remove_duplicates != ''):
+  print('Skipped {} duplicates from a total of {} items.'.format(duplicate_count, count))
+print('The WebDataset files can be found in {}.'.format(args.shards))
 print('###################################################################')
