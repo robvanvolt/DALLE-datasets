@@ -123,7 +123,7 @@ skip_duplicate = False
 # Arguments for resizing / discarding images
 discard_count = 0
 resize_count = 0
-skip_sizemismatch = False
+skip_sizemismatch_or_corrupt = False
 
 start = timeit.default_timer()
 with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount), encoder=args.use_encoder) as sink:
@@ -149,26 +149,33 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
           if args.min_max_size != '':
             if item['width'] < SIZE['min'] and item['height'] < SIZE['min']:
               discard_count += 1
-              skip_sizemismatch = True
+              skip_sizemismatch_or_corrupt = True
             elif item['width'] > SIZE['max'] or item['height'] > SIZE['max']:
-              resize_count += 1
-              # Resize image
-              foo = Image.open(BytesIO(item['image'])).convert('RGB')
-              a = max(SIZE['max']/foo.size[0], SIZE['max']/foo.size[1])
-              foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS)
-              # Image to bytes
-              img_byte_arr = BytesIO()
-              foo.save(img_byte_arr, format='jpeg', optimize=True, quality=85)
-              item['image'] = img_byte_arr.getvalue()
-
-          if skip_sizemismatch == False:
+              # Try opening and resizing image
+              try:
+                foo = Image.open(BytesIO(item['image']))
+                if foo.mode != 'RGB':
+                  foo = foo.convert('RGB')
+                a = max(SIZE['max']/foo.size[0], SIZE['max']/foo.size[1])
+                foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS)
+                # Image to bytes
+                img_byte_arr = BytesIO()
+                foo.save(img_byte_arr, format='jpeg', optimize=True, quality=85)
+                item['image'] = img_byte_arr.getvalue()
+              except Exception as e:
+                print(e)
+                discard_count += 1
+                skip_sizemismatch_or_corrupt = True
+              else:
+                resize_count += 1
+          if skip_sizemismatch_or_corrupt == False:
             #### Writing row to WebDataset file
             for key in KEEP_KEYS:
                 sample[key + '.' + KEEP_KEYS[key] if args.use_encoder else key] = item[key]
             sink.write(sample)
             #### End writing row to WebDataset file
           else:
-            skip_sizemismatch = False
+            skip_sizemismatch_or_corrupt = False
 
         else:
           skip_duplicate = False
