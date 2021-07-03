@@ -186,13 +186,13 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
         
 stop = timeit.default_timer()
 
-print('######################################################################')  
+print('#################################################################################')  
 print('# Finished processing {:,} samples from tfrecord files.'.format(count))
 print('# Process took {:.2f} seconds to finish.'.format(stop - start))
 if (args.remove_duplicates != ''):
   print('# Skipped {:,} duplicates from a total of {:,} items.'.format(duplicate_count, count))
 if (args.min_max_size != ''):
-  print('# Discarded {:,} and resized {:,} images from remaining {:,} items.'.format(discard_count, resize_count, count - duplicate_count))
+  print('# Discarded {:,} and resized {:,} images from remaining {:,} non-duplicates.'.format(discard_count, resize_count, count - duplicate_count))
   print('# {:,} images remain in the Dataset.'.format(count - (duplicate_count + discard_count)))
 print('# The WebDataset files can be found in {}.'.format(args.shards))
-print('######################################################################')
+print('#################################################################################')
