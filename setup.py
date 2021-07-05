@@ -23,6 +23,7 @@ setup(
     'WebDataset',
     'tfrecord',
     'tensorflow',
+    'youtokentome',
   ],
   classifiers=[
     'Development Status :: 4 - Beta',

@@ -4,7 +4,7 @@ import io
 import matplotlib.pyplot as plt
 
 # dataset = wds.WebDataset("dataset.tar.gz")
-dataset = wds.WebDataset("shards/ds_000000.tar")
+dataset = wds.WebDataset("./shards/wds_000000.tar")
 
 for i, d in enumerate(dataset):
     # print(i)

@@ -5,6 +5,7 @@ tfr
 tartest.py
 skips
 shards
+output
 openimages
 openimages_old.py
 .DS_Store
