@@ -72,9 +72,14 @@ else:
 
     dataset = wds.WebDataset(wds_files)
 
+    c = 0
+
     with open(path_to_textfile, "w") as f:
         for item in dataset:
             f.write(html.unescape(item[args.text_key].decode('utf-8')))
+            if c % 10000 == 0:
+                print('   {:.2f}'.format(c), end='\r')
+            c += 1
 
 yttm.BPE.train(
     data=path_to_textfile, 
