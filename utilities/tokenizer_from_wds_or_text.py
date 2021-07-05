@@ -2,10 +2,10 @@ import youtokentome as yttm
 import webdataset as wds
 from pathlib import Path
 import argparse
+import shutil
 import html
 import os
 
-# yttm bpe --vocab_size=4096 --coverage=1.0 --model=blogoimixer_4096.bpe --data=blogoi_allcaps.txt
 parser = argparse.ArgumentParser("""Generate a custom tokenizer for your WebDataset files.""")
 
 parser.add_argument(
@@ -57,29 +57,35 @@ if args.source[-4:].lower() == '.txt':
     path_to_textfile = args.source
 else:
     assert os.path.isdir(args.source), 'The source path has to be a directory containing text files.'
-    print('---------------------------------------------------------------')
-    print('----> Generating a singe text file for WebDataset folder first.')
-    print('---------------------------------------------------------------')
+    print('------------------------------------------------------')
+    print('----> Generating a singe text file from dataset first.')
+    print('------------------------------------------------------')
     path = Path(args.source)
 
-    wds_files = image_files = [
+    wds_files = [
         *path.glob('**/*.tar'), *path.glob('**/*.tar.gz')
     ]
 
-    assert len(wds_files) > 0, 'No WebDataset files (.tar/.tar.gz) found in {} found'.format(args.source)
-
-    wds_files = [str(x) for x in wds_files]
-
-    dataset = wds.WebDataset(wds_files)
-
-    c = 0
-
-    with open(path_to_textfile, "w") as f:
-        for item in dataset:
-            f.write(html.unescape(item[args.text_key].decode('utf-8')))
-            if c % 10000 == 0:
-                print('   {:.2f}'.format(c), end='\r')
-            c += 1
+    if len(wds_files) > 0:
+        print('Found {:,} WebDataset files (.tar/.tar.gz) in {}'.format(len(wds_files), args.source))
+        wds_files = [str(x) for x in wds_files]
+        dataset = wds.WebDataset(wds_files)
+        c = 0
+        with open(path_to_textfile, "w") as f:
+            for item in dataset:
+                f.write(html.unescape(item[args.text_key].decode('utf-8')))
+                if c % 10000 == 0:
+                    print('   {:.2f}'.format(c), end='\r')
+                c += 1
+    else:
+        print('No WebDataset files (.tar/.tar.gz) found in {}'.format(args.source))
+        print('Trying to find text files next (classic format with image-text-pairs).')
+        txt_files = [*path.glob('**/*.txt')]
+        assert len(txt_files) > 0, 'No txt files found in source directory {}'.format(args.source)
+        with open(path_to_textfile, 'wb') as wfd:
+            for f in txt_files:
+                with open(f,'rb') as fd:
+                    shutil.copyfileobj(fd, wfd)
 
 yttm.BPE.train(
     data=path_to_textfile, 
