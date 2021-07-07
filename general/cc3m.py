@@ -27,6 +27,8 @@ IMAGEFORMATS = ['jpg', 'jpeg', 'bmp', 'png']
 MAXWIDTH = 320
 MAXHEIGHT = 320
 CHUNKS = 500000
+THREAD_COUNT = 128
+HIDE_ERRORS = False
 
 os.makedirs(Path(DATASETFOLDER), exist_ok=True)
 
@@ -66,7 +68,7 @@ if not os.path.isfile(Path(DATASETFOLDER + '/' + DATASET)):
         zip_ref.extractall()
         os.rename(Path(DATASETFOLDER + '/' + zipname), Path(DATASETFOLDER + '/' + DATASET))
 
-pandarallel.initialize()
+pandarallel.initialize(nb_workers=THREAD_COUNT)
 
 ### downloading dataset and resizsing images in parallel
 def write_files(x, folderpath):
@@ -77,8 +79,9 @@ def write_files(x, folderpath):
         foo = foo.resize((int(foo.size[0] * a), int(foo.size[1] * a)), Image.ANTIALIAS)
         foo.save(Path(folderpath + '/' + id + '.jpg'), optimize=True, quality=85)
     except Exception as exc:
-        print('Failed downloading {} with url {}'.format(id, x.url))
-        print(exc)
+        if not HIDE_ERRORS:
+            print('Failed downloading {} with url {}'.format(id, x.url))
+            print(exc)
         pass
     else:
         with open(Path(folderpath + '/' + id + '.txt'), 'w') as f:
