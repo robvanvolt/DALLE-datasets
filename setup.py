@@ -24,6 +24,8 @@ setup(
     'tfrecord',
     'tensorflow',
     'youtokentome',
+    'pandas',
+    'pandarallel',
   ],
   classifiers=[
     'Development Status :: 4 - Beta',
