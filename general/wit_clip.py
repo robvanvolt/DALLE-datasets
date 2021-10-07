@@ -4,17 +4,18 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-from multiprocessing import get_context, cpu_count
+# from multiprocessing import get_context, cpu_count
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
 from helper_scripts.wit_dtype import DTYPE, DFLENGTH, DFLENGTH_ENGLISH
 from helper_scripts.wit_image_downloader import wit_download_image
+from concurrent.futures import ThreadPoolExecutor
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ONLYENGLISH = True
 MULTIPROCESSING = True
-THREAD_COUNT = cpu_count()
+# THREAD_COUNT = cpu_count()
 CHUNKSIZE = 10000
 EMBEDDINGS_PER_PICKLE = 5000
 SIMILARITIESFOLDER = './wit/witsimilarities'
@@ -127,10 +128,13 @@ if __name__ == '__main__':
                 results = []
 
                 if MULTIPROCESSING:
-                    with get_context("spawn").Pool(THREAD_COUNT) as p:
-                        for res in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                    with ThreadPoolExecutor() as executor:
+                        for res in tqdm(executor.map(process_row, df.itertuples(name=None)), total=dflen):
                             results.append(res)
-                        p.close()
+                    # with get_context("spawn").Pool(THREAD_COUNT) as p:
+                    #     for res in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                    #         results.append(res)
+                    #     p.close()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
