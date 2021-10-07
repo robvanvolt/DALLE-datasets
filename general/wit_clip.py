@@ -90,6 +90,9 @@ def process_row(row):
             embeddings = None
             
         return row[0], similarities, embeddings
+    
+def printx(x):
+    return(x)
 
 if __name__ == '__main__':
     start = time.time()
@@ -126,9 +129,13 @@ if __name__ == '__main__':
 
                 if MULTIPROCESSING:
                     with get_context("spawn").Pool(THREAD_COUNT) as p:
-                        res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen)
-                        results.extend(res)
-                        p.close()
+                        for _ in p.imap_unordered(printx, range(20000)):
+                            print(_)
+
+                    # with get_context("spawn").Pool(THREAD_COUNT) as p:
+                    #     res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen)
+                    #     results.extend(res)
+                    #     p.close()
                         # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
                         #     pass
 
