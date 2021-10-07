@@ -4,7 +4,6 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-from pebble import ProcessPool
 from multiprocessing import cpu_count #, get_context
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
