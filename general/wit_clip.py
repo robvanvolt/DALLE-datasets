@@ -4,7 +4,7 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-from multiprocessing import Pool, get_context
+from multiprocessing import Pool
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
 from helper_scripts.wit_dtype import DTYPE
@@ -128,7 +128,7 @@ if __name__ == '__main__':
                 dflen = df.shape[0]
 
                 if MULTIPROCESSING:
-                    with get_context("spawn").Pool(THREAD_COUNT) as p:
+                    with Pool(THREAD_COUNT) as p:
                         for _ in p.imap_unordered(printx, range(20000)):
                             print(_)
 
