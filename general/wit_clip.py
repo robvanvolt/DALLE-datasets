@@ -13,6 +13,7 @@ import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+CHUNKSIZE = 64
 MULTIPROCESSING = True
 THREAD_COUNT = multiprocessing.cpu_count()
 CHUNKSIZE = THREAD_COUNT*10000
@@ -126,9 +127,16 @@ if __name__ == '__main__':
 
                 if MULTIPROCESSING:
                     with Pool(THREAD_COUNT) as p:
-                        for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                            results.append(result)
+                        res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen)
+                        results.extend(res)
                         p.close()
+                        # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
+                        #     pass
+
+                    # with Pool(THREAD_COUNT) as p:
+                    #     for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                    #         results.append(result)
+                    #     p.close()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
