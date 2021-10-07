@@ -102,7 +102,7 @@ if __name__ == '__main__':
     start = time.time()
     global_counter = 0
     download_wit_urls(urlfolder=wit_url_folder, onepercentsample=args.onepercentsample)
-    fns = [x for x in os.listdir(wit_url_folder) if x[0] != '.' and '.tsv.gz' in x]
+    fns = sorted([x for x in os.listdir(wit_url_folder) if x[0] != '.' and '.tsv.gz' in x])
 
     for i, wit_filename in enumerate(fns):
         print('Processing {}. file: {}...'.format(i+1, wit_filename))
