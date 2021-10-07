@@ -4,7 +4,8 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-# from multiprocessing import get_context, cpu_count
+from pebble import ProcessPool
+from multiprocessing import cpu_count #, get_context
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
 from helper_scripts.wit_dtype import DTYPE, DFLENGTH, DFLENGTH_ENGLISH
@@ -15,7 +16,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ONLYENGLISH = True
 MULTIPROCESSING = True
-# THREAD_COUNT = cpu_count()
+THREAD_COUNT = 2*cpu_count()+1
 CHUNKSIZE = 10000
 EMBEDDINGS_PER_PICKLE = 5000
 SIMILARITIESFOLDER = './wit/witsimilarities'
@@ -60,6 +61,14 @@ if args.saveembeddings:
 dtv = list(DTYPE.keys())
 caption_dict = {0:dtv[4], 1:dtv[5], 2:dtv[6], 3:dtv[7], 4:dtv[8], 5:dtv[15], 6:dtv[16]}
 
+def task_done(future):
+    try:
+        result = future.result()
+    except:
+        return False
+    else:
+        return result
+
 def process_row(row):
     saveembeddings = row[18]
     saveimages = row[19]
@@ -98,6 +107,11 @@ if __name__ == '__main__':
 
     for i, wit_filename in enumerate(fns):
         print('Processing {}. file: {}...'.format(i+1, wit_filename))
+        if ONLYENGLISH:
+            dflen = DFLENGTH_ENGLISH[wit_filename]
+        else:
+            dflen = DFLENGTH[wit_filename]
+        pbar = tqdm(total=dflen)
         similarities_dict = {}
         embeddings_dict_counter = 0
         if args.saveembeddings:
@@ -118,10 +132,7 @@ if __name__ == '__main__':
             for i, df in enumerate(reader):
                 if ONLYENGLISH:
                     df = df[df['language'] == 'en']
-                    dflen = DFLENGTH_ENGLISH[wit_filename]
-                else:
-                    dflen = DFLENGTH[wit_filename]
-                dflen = dflen - i*CHUNKSIZE
+                # dflen = dflen - i*CHUNKSIZE
                 df['saveembeddings'] = args.saveembeddings
                 df['saveimages'] = args.saveimages
                 embeddings_dict = {}
@@ -129,16 +140,14 @@ if __name__ == '__main__':
 
                 if MULTIPROCESSING:
                     with ThreadPoolExecutor() as executor:
-                        for res in tqdm(executor.map(process_row, df.itertuples(name=None)), total=dflen):
+                        for res in executor.map(process_row, df.itertuples(name=None)):
                             results.append(res)
-                    # with get_context("spawn").Pool(THREAD_COUNT) as p:
-                    #     for res in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                    #         results.append(res)
-                    #     p.close()
+                            pbar.update()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
-                        results.append(result)          
+                        results.append(result)  
+                        pbar.update()        
 
                 for result in results:
                     if result[0] != False:
@@ -174,6 +183,7 @@ if __name__ == '__main__':
                     ), sep="\t")
 
         global_counter += DFLENGTH_ENGLISH[wit_filename] if ONLYENGLISH else DFLENGTH[wit_filename]
+        pbar.close()
 
     end = time.time()
     elapsed = end - start
