@@ -4,7 +4,7 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
 from helper_scripts.wit_dtype import DTYPE
@@ -13,7 +13,6 @@ import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-CHUNKSIZE = 64
 MULTIPROCESSING = True
 THREAD_COUNT = multiprocessing.cpu_count()
 CHUNKSIZE = THREAD_COUNT*10000
@@ -126,19 +125,18 @@ if __name__ == '__main__':
                 dflen = df.shape[0]
 
                 if MULTIPROCESSING:
-                    # with Pool(THREAD_COUNT) as p:
-                        # res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen)
-                        # results.extend(res)
-                        # p.close()
+                    with get_context("spawn").Pool(THREAD_COUNT) as p:
+                        res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen)
+                        results.extend(res)
+                        p.close()
                         # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
                         #     pass
 
-                    p = Pool(THREAD_COUNT)
-                    for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
-                        pass
-                        # results.append(result)
-                    p.close()
-                    p.join()
+                    # p = Pool(THREAD_COUNT)
+                    # for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
+                    #     results.append(result)
+                    # p.close()
+                    # p.join()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
