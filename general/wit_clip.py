@@ -134,8 +134,9 @@ if __name__ == '__main__':
                         #     pass
 
                     p = Pool(THREAD_COUNT)
-                    for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                        results.append(result)
+                    for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
+                        pass
+                        # results.append(result)
                     p.close()
                     p.join()
                 else:
