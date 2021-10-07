@@ -26,6 +26,7 @@ setup(
     'youtokentome',
     'pandas',
     'pandarallel',
+    'svglib'
   ],
   classifiers=[
     'Development Status :: 4 - Beta',

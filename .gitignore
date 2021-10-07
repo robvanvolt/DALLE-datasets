@@ -1,8 +1,17 @@
 .vscode/
+witurls/
 datasets
+general/helper_scripts/__pycache__
+general/wit_old.py
+general/clip_wit.py
+general/wit.py
+general/wit_clip copy.py
+utilities/clip_wit.py
+general/wit_old.py
 tfrecords
 tfr
 tartest.py
+test.py
 skips
 shards
 output
