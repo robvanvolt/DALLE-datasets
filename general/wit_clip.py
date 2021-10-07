@@ -126,17 +126,17 @@ if __name__ == '__main__':
                 dflen = df.shape[0]
 
                 if MULTIPROCESSING:
-                    with Pool(THREAD_COUNT) as p:
-                        res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen)
-                        results.extend(res)
-                        p.close()
+                    # with Pool(THREAD_COUNT) as p:
+                        # res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen)
+                        # results.extend(res)
+                        # p.close()
                         # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
                         #     pass
 
-                    # with Pool(THREAD_COUNT) as p:
-                    #     for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                    #         results.append(result)
-                    #     p.close()
+                    with Pool(THREAD_COUNT) as p:
+                        for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                            results.append(result)
+                        p.close()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
