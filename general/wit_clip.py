@@ -14,7 +14,7 @@ import multiprocessing
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 MULTIPROCESSING = True
-THREAD_COUNT = multiprocessing.cpu_count()
+THREAD_COUNT = 2 # multiprocessing.cpu_count()
 CHUNKSIZE = THREAD_COUNT*10000
 SIMILARITIESFOLDER = './wit/witsimilarities'
 EMBEDDINGSFOLDER = './wit/witembeddings'
@@ -50,6 +50,8 @@ args = parser.parse_args()
 
 wit_url_folder = args.wit_url_folder if args.wit_url_folder else WITURLFOLDER
 
+clipper = CLIP()
+
 os.makedirs(SIMILARITIESFOLDER, exist_ok=True)
 if args.saveembeddings:
     os.makedirs(EMBEDDINGSFOLDER, exist_ok=True)
@@ -58,7 +60,6 @@ dtv = list(DTYPE.keys())
 caption_dict = {0:dtv[4], 1:dtv[5], 2:dtv[6], 3:dtv[7], 4:dtv[8], 5:dtv[15], 6:dtv[16]}
 
 def process_row(row):
-    clipper = CLIP()
     saveembeddings = row[18]
     saveimages = row[19]
     image_url = row[3]

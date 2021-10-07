@@ -13,7 +13,6 @@ use_jit = False # torch.cuda.is_available()
 class CLIP:
     def __init__(self):
         self.model, self.preprocess = clip.load("ViT-B/32", device=device, jit=use_jit)
-        self.cosine_similarity = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
         self.tokenizer = clip.tokenize
 
     def return_similarities(self, image, captions, image_url):
