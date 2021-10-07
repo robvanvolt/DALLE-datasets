@@ -21,8 +21,6 @@ EMBEDDINGSFOLDER = './wit/witembeddings'
 WITURLFOLDER = './wit/witurls'
 EMBEDDINGS_PER_PICKLE = 10000
 
-clipper = CLIP()
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--wit_url_folder', type=str,
@@ -60,6 +58,7 @@ dtv = list(DTYPE.keys())
 caption_dict = {0:dtv[4], 1:dtv[5], 2:dtv[6], 3:dtv[7], 4:dtv[8], 5:dtv[15], 6:dtv[16]}
 
 def process_row(row):
+    clipper = CLIP()
     saveembeddings = row[18]
     saveimages = row[19]
     image_url = row[3]
@@ -78,7 +77,6 @@ def process_row(row):
 
     try:
         image_request = wit_download_image(image_url, saveimages)
-
         similarities, embeddings = clipper.return_similarities(image_request, captions, image_url)
         similarities = {caption_dict[j]: round(similarities[i], 4) for i, j in enumerate(available_ids) }
     except Exception as e:
@@ -88,7 +86,6 @@ def process_row(row):
     else:
         if not saveembeddings:
             embeddings = None
-            
         return row[0], similarities, embeddings
 
 if __name__ == '__main__':
