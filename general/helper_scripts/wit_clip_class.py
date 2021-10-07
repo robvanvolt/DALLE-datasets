@@ -20,7 +20,7 @@ class CLIP:
             svgname = image_url.split('/')[-1]
             pngname = svgname[:-4] + '.png'
             with open(svgname, 'wb') as f:
-                f.write(image)
+                f.write(image.content)
             svg_image = svg2rlg(svgname)
             renderPM.drawToFile(svg_image, pngname, fmt="PNG")
             openedImage = Image.open(pngname)
@@ -28,7 +28,7 @@ class CLIP:
             os.remove(svgname)
             os.remove(pngname)
         else:
-            openedImage = Image.open(image)
+            openedImage = Image.open(image.raw)
             image_tokens = self.preprocess(openedImage).unsqueeze(0).to(device)
         openedImage.close()
         logits = []
