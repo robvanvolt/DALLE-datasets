@@ -133,10 +133,11 @@ if __name__ == '__main__':
                         # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
                         #     pass
 
-                    with Pool(THREAD_COUNT) as p:
-                        for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                            results.append(result)
-                        p.close()
+                    p = Pool(THREAD_COUNT)
+                    for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                        results.append(result)
+                    p.close()
+                    p.join()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)

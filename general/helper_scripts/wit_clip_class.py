@@ -8,7 +8,7 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 
 device = "cpu" # "cuda" if torch.cuda.is_available() else "cpu"
-use_jit = torch.cuda.is_available()
+use_jit = False # torch.cuda.is_available()
 
 class CLIP:
     def __init__(self):
