@@ -4,7 +4,7 @@ import time
 import pickle
 from tqdm import tqdm
 import pandas as pd
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 from helper_scripts.wit_url_downloader import download_wit_urls
 from helper_scripts.wit_clip_class import CLIP
 from helper_scripts.wit_dtype import DTYPE
@@ -90,9 +90,6 @@ def process_row(row):
             embeddings = None
             
         return row[0], similarities, embeddings
-    
-def printx(x):
-    return(x)
 
 if __name__ == '__main__':
     start = time.time()
@@ -128,22 +125,10 @@ if __name__ == '__main__':
                 dflen = df.shape[0]
 
                 if MULTIPROCESSING:
-                    with Pool(THREAD_COUNT) as p:
-                        for _ in p.imap_unordered(printx, range(20000)):
-                            print(_)
-
-                    # with get_context("spawn").Pool(THREAD_COUNT) as p:
-                    #     res = tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen)
-                    #     results.extend(res)
-                    #     p.close()
-                        # for _ in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
-                        #     pass
-
-                    # p = Pool(THREAD_COUNT)
-                    # for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None), chunksize=CHUNKSIZE), total=dflen):
-                    #     results.append(result)
-                    # p.close()
-                    # p.join()
+                    with get_context("spawn").Pool(THREAD_COUNT) as p:
+                        for res in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                            results.extend(res)
+                        p.close()
                 else:
                     for row in tqdm(df.itertuples(name=None), total=dflen):
                         result = process_row(row)
