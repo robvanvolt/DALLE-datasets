@@ -13,6 +13,7 @@ import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+MULTIPROCESSING = True
 THREAD_COUNT = multiprocessing.cpu_count()
 CHUNKSIZE = THREAD_COUNT*10000
 SIMILARITIESFOLDER = './wit/witsimilarities'
@@ -123,9 +124,14 @@ if __name__ == '__main__':
                 results = []
                 dflen = df.shape[0]
 
-                with Pool(THREAD_COUNT) as p:
-                    for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
-                        results.append(result)
+                if MULTIPROCESSING:
+                    with Pool(THREAD_COUNT) as p:
+                        for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                            results.append(result)
+                else:
+                    for row in tqdm(df.itertuples(name=None), total=dflen):
+                        result = process_row(row)
+                        results.append(result)          
 
                 for result in results:
                     if result[0] != False:
