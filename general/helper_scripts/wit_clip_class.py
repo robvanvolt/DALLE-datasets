@@ -7,8 +7,8 @@ from multiprocessing.queues import JoinableQueue
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-use_jit = torch.cuda.is_available()
+device = "cpu" # "cuda" if torch.cuda.is_available() else "cpu"
+use_jit = False # torch.cuda.is_available()
 
 class CLIP:
     def __init__(self):

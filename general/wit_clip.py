@@ -18,6 +18,7 @@ CHUNKSIZE = THREAD_COUNT*10000
 SIMILARITIESFOLDER = './wit/witsimilarities'
 EMBEDDINGSFOLDER = './wit/witembeddings'
 WITURLFOLDER = './wit/witurls'
+EMBEDDINGS_PER_PICKLE = 10000
 
 clipper = CLIP()
 
@@ -132,7 +133,7 @@ if __name__ == '__main__':
                         similarities_dict[index] = sim
                         if args.saveembeddings:
                             embeddings_dict[index] = emb
-                            if len(embeddings_dict.keys()) >= 10:
+                            if len(embeddings_dict.keys()) >= EMBEDDINGS_PER_PICKLE:
                                 with open(os.path.join(
                                     EMBEDDINGSFOLDER, 
                                     '{}_{:05d}_image_embeddings.pkl'.format(prefix, embeddings_dict_counter)
