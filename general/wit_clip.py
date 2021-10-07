@@ -14,7 +14,7 @@ import multiprocessing
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 MULTIPROCESSING = True
-THREAD_COUNT = 8 # multiprocessing.cpu_count()
+THREAD_COUNT = 4 # multiprocessing.cpu_count()
 CHUNKSIZE = 5000
 SIMILARITIESFOLDER = './wit/witsimilarities'
 EMBEDDINGSFOLDER = './wit/witembeddings'
