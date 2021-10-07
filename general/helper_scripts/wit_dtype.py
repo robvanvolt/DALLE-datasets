@@ -17,3 +17,29 @@ DTYPE = {
     'context_page_description': str,
     'context_section_description': str
 }
+
+DFLENGTH = {
+    'wit_v1.train.all-00004-of-00010.tsv.gz': 3701161, 
+    'wit_v1.train.all-00001-of-00010.tsv.gz': 3702075, 
+    'wit_v1.train.all-00005-of-00010.tsv.gz': 3708106, 
+    'wit_v1.train.all-00006-of-00010.tsv.gz': 3704684, 
+    'wit_v1.train.all-00002-of-00010.tsv.gz': 3701785, 
+    'wit_v1.train.all-00007-of-00010.tsv.gz': 3703736, 
+    'wit_v1.train.all-00008-of-00010.tsv.gz': 3705646, 
+    'wit_v1.train.all-00000-of-00010.tsv.gz': 3708026, 
+    'wit_v1.train.all-1percent_sample.tsv.gz': 370373, 
+    'wit_v1.train.all-00003-of-00010.tsv.gz': 3706924
+}
+
+DFLENGTH_ENGLISH = {
+    'wit_v1.train.all-00004-of-00010.tsv.gz': 540463, 
+    'wit_v1.train.all-00001-of-00010.tsv.gz': 542006, 
+    'wit_v1.train.all-00005-of-00010.tsv.gz': 540982, 
+    'wit_v1.train.all-00006-of-00010.tsv.gz': 540387, 
+    'wit_v1.train.all-00002-of-00010.tsv.gz': 540499, 
+    'wit_v1.train.all-00007-of-00010.tsv.gz': 541728, 
+    'wit_v1.train.all-00008-of-00010.tsv.gz': 540557, 
+    'wit_v1.train.all-00000-of-00010.tsv.gz': 542593, 
+    'wit_v1.train.all-1percent_sample.tsv.gz': 54071, 
+    'wit_v1.train.all-00003-of-00010.tsv.gz': 541391
+}
