@@ -98,6 +98,7 @@ if __name__ == '__main__':
     for i, wit_filename in enumerate(fns):
         print('Processing {}. file: {}...'.format(i+1, wit_filename))
         similarities_dict = {}
+        embeddings_dict_counter = 0
         if args.saveembeddings:
             embeddings_dict = {}
             if '1percent' in wit_filename:
@@ -113,29 +114,33 @@ if __name__ == '__main__':
             dtype=DTYPE,
             error_bad_lines=False
         ) as reader:
-            for embeddings_dict_counter, df in enumerate(reader):
+            for df in reader:
                 df = df[df['language'] == 'en']
                 df['saveembeddings'] = args.saveembeddings
                 df['saveimages'] = args.saveimages
-                pool = Pool(THREAD_COUNT)
-
                 embeddings_dict = {}
+                results = []
+                dflen = df.shape[0]
 
-                for index, sim, emb in tqdm(pool.imap_unordered(process_row, df.itertuples(name=None)), total=df.shape[0]):
-                    global_counter += 1
-                    if index != False:
+                with Pool(THREAD_COUNT) as p:
+                    for result in tqdm(p.imap_unordered(process_row, df.itertuples(name=None)), total=dflen):
+                        results.append(result)
+
+                for result in results:
+                    if result[0] != False:
+                        index, sim, emb = result
                         similarities_dict[index] = sim
                         if args.saveembeddings:
                             embeddings_dict[index] = emb
+                            if len(embeddings_dict.keys()) >= 10:
+                                with open(os.path.join(
+                                    EMBEDDINGSFOLDER, 
+                                    '{}_{:05d}_image_embeddings.pkl'.format(prefix, embeddings_dict_counter)
+                                ), 'wb') as f:
+                                        pickle.dump(embeddings_dict, f)
+                                        embeddings_dict_counter += 1
 
-                pool.close()
-                pool.join()
-
-                if args.saveembeddings:
-                    with open(os.path.join(
-                        EMBEDDINGSFOLDER, 
-                        '{}_{:05d}_image_embeddings.pkl'.format(prefix, embeddings_dict_counter)), 'wb') as f:
-                            pickle.dump(embeddings_dict, f)
+                global_counter += dflen
 
         similarity_df = pd.DataFrame.from_dict(similarities_dict, orient='index')
         similarity_df.index.name = 'index'

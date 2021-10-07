@@ -8,6 +8,7 @@ general/wit.py
 general/wit_clip copy.py
 utilities/clip_wit.py
 general/wit_old.py
+general/wit_clip copy2.py
 tfrecords
 tfr
 tartest.py
