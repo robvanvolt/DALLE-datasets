@@ -3,6 +3,7 @@ import os
 import os.path
 import random
 import argparse
+import json
 
 from pathlib import Path
 from PIL import Image
@@ -17,6 +18,12 @@ parser.add_argument(
     dest="compression", 
     action="store_true",
     help="Creates compressed .tar.gz files instead of uncompressed .tar files."
+    )
+parser.add_argument(
+    "--json", 
+    dest="json", 
+    action="store_true",
+    help="Reads json files and adds them to the .tar files."
     )
 parser.add_argument(
     "--image_text_keys", 
@@ -61,13 +68,29 @@ def readfile(fname):
         return stream.read()
 
 path = Path(args.data)
-text_files = [*path.glob('**/*.txt', recursive=True)]
+text_files = [*path.glob('**/*.txt')]
 text_files = {text_file.stem: text_file for text_file in text_files} # str(text_file.parents[0]) + 
 text_total = len(text_files)
 
+if args.json:
+    json_files = [*path.glob('**/*.json')]
+    json_files = {json_file.stem: json_file for json_file in json_files}
+    json_dicts = {}
+    # json_files_old = json_files.copy()
+
+    for key in json_files:
+        try:
+            with open(json_files[key], "r") as f:
+                json_dicts[key] = json.dumps(json.load(f))
+        except:
+            pass
+            # del json_files["key"]
+        print("Found {} corrupt json file(s).".format(len(json_files.keys()) - len(json_dicts.keys())))
+    json_keys = json_files.keys()
+
 image_files = [
-    *path.glob('**/*.png', recursive=True), *path.glob('**/*.jpg', recursive=True),
-    *path.glob('**/*.jpeg', recursive=True), *path.glob('**/*.bmp', recursive=True)
+    *path.glob('**/*.png'), *path.glob('**/*.jpg'),
+    *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
 ]
 image_files = {image_file.stem: image_file for image_file in image_files} # str(image_file.parents[0]) +
 image_total = len(image_files)
@@ -112,4 +135,6 @@ with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxco
             image_key: image,
             caption_key: text
         }
+        if args.json and keys[i] in json_keys:
+            sample["json"] = json_dicts[keys[i]]
         sink.write(sample)
